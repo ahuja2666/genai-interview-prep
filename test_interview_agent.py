@@ -17,7 +17,7 @@ def test_interview():
     Senior Python Developer
     
     We are seeking a skilled Senior Python Developer with at least 5 years of experience to join our growing team. 
-    The ideal candidate will have deep knowledge of Python, Flask or Django, and experience with machine learning libraries.
+    The ideal candidate will have deep knowledge of Python, FastAPI or Django, and experience with machine learning libraries.
     
     Responsibilities:
     - Design, build and maintain efficient, reusable, and reliable Python code
@@ -28,7 +28,7 @@ def test_interview():
     
     Requirements:
     - 5+ years of Python development experience
-    - Proficient in one or more Python frameworks (Flask, Django)
+    - Proficient in one or more Python frameworks (FastAPI, Django)
     - Experience with machine learning libraries (scikit-learn, TensorFlow, PyTorch)
     - Knowledge of database technologies (SQL, NoSQL)
     - Experience with version control (Git)
@@ -42,13 +42,13 @@ def test_interview():
     
     Professional Summary:
     Experienced Python developer with 6 years of experience building web applications and machine learning solutions.
-    Skilled in Flask, Django, and various ML libraries.
+    Skilled in FastAPI, Django, and various ML libraries.
     
     Experience:
     
     ABC Tech (2020-Present)
     Senior Python Developer
-    - Developed and maintained multiple Flask applications for financial data analysis
+    - Developed and maintained multiple FastAPI applications for financial data analysis
     - Implemented machine learning models for predictive analytics using scikit-learn
     - Optimized database queries resulting in 40% performance improvement
     - Mentored junior developers and conducted code reviews
@@ -61,7 +61,7 @@ def test_interview():
     
     Skills:
     - Programming Languages: Python (expert), JavaScript, SQL
-    - Frameworks: Flask, Django, FastAPI
+    - Frameworks: FastAPI, Django, FastAPI
     - ML Libraries: scikit-learn, TensorFlow, PyTorch
     - Databases: PostgreSQL, MongoDB
     - Tools: Git, Docker, CI/CD
@@ -83,7 +83,7 @@ def test_interview():
     
     # Simulate answers
     answers = [
-        "I have been using Python professionally for 6 years now, primarily working with Flask for web applications and scikit-learn for machine learning models. At ABC Tech, I've built several Flask applications that analyze financial data and make predictions using ML algorithms.",
+        "I have been using Python professionally for 6 years now, primarily working with FastAPI for web applications and scikit-learn for machine learning models. At ABC Tech, I've built several FastAPI applications that analyze financial data and make predictions using ML algorithms.",
         "One of the most challenging projects I worked on was building a real-time fraud detection system. The challenge was processing transactions quickly while maintaining high accuracy. I solved this by implementing a two-stage approach: a fast rule-based filter followed by a more complex ML model only for suspicious transactions.",
         "Yes, I have experience with both SQL and NoSQL databases. I've worked extensively with PostgreSQL for relational data and MongoDB for document storage. At ABC Tech, I optimized several complex SQL queries that improved our application performance by 40%."
     ]

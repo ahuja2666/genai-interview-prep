@@ -140,8 +140,8 @@
     </div>
     
     <script>
-        // Generate a unique session ID
-        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Generate a unique client ID
+        const clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         let socket;
         
         // DOM Elements
@@ -163,50 +163,64 @@
         
         // Connect to WebSocket server
         function connectToServer() {
-            socket = io("http://localhost:5000");
+            // FastAPI WebSocket URL with client ID
+            socket = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
             
-            socket.on("connect", () => {
+            socket.onopen = () => {
                 console.log("Connected to server");
                 connectionStatus.textContent = "Connected to server";
                 connectionStatus.className = "status connected";
-            });
+            };
             
-            socket.on("disconnect", () => {
+            socket.onclose = () => {
                 console.log("Disconnected from server");
                 connectionStatus.textContent = "Disconnected from server";
                 connectionStatus.className = "status error";
-            });
+            };
             
-            socket.on("interview_started", (data) => {
-                console.log("Interview started:", data);
-                currentQuestion.textContent = data.question;
-                questionNumber.textContent = data.question_number;
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const eventType = data.event;
+                const payload = data.data;
                 
-                setupForm.style.display = "none";
-                interviewArea.style.display = "block";
-                feedbackArea.style.display = "none";
-            });
-            
-            socket.on("next_question", (data) => {
-                console.log("Next question:", data);
-                currentQuestion.textContent = data.question;
-                questionNumber.textContent = data.question_number;
-                answerTextarea.value = "";
-            });
-            
-            socket.on("interview_complete", (data) => {
-                console.log("Interview complete:", data);
-                feedbackContent.innerHTML = formatFeedback(data.feedback.detailed_feedback);
+                console.log("Received event:", eventType, payload);
                 
-                setupForm.style.display = "none";
-                interviewArea.style.display = "none";
-                feedbackArea.style.display = "block";
-            });
+                switch (eventType) {
+                    case "interview_started":
+                        currentQuestion.textContent = payload.question;
+                        questionNumber.textContent = payload.question_number;
+                        
+                        setupForm.style.display = "none";
+                        interviewArea.style.display = "block";
+                        feedbackArea.style.display = "none";
+                        break;
+                        
+                    case "next_question":
+                        currentQuestion.textContent = payload.question;
+                        questionNumber.textContent = payload.question_number;
+                        answerTextarea.value = "";
+                        break;
+                        
+                    case "interview_complete":
+                        feedbackContent.innerHTML = formatFeedback(payload.feedback.detailed_feedback);
+                        
+                        setupForm.style.display = "none";
+                        interviewArea.style.display = "none";
+                        feedbackArea.style.display = "block";
+                        break;
+                        
+                    case "error":
+                        console.error("Error:", payload.message);
+                        alert("Error: " + payload.message);
+                        break;
+                }
+            };
             
-            socket.on("error", (data) => {
-                console.error("Error:", data.message);
-                alert("Error: " + data.message);
-            });
+            socket.onerror = (error) => {
+                console.error("WebSocket error:", error);
+                connectionStatus.textContent = "Error connecting to server";
+                connectionStatus.className = "status error";
+            };
         }
         
         // Format feedback with some basic HTML
@@ -269,6 +283,19 @@
             }
         }
         
+        // Send message to WebSocket server
+        function sendMessage(eventType, data) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    event: eventType,
+                    data: data
+                }));
+            } else {
+                console.error("WebSocket is not connected");
+                alert("Server connection lost. Please refresh the page.");
+            }
+        }
+        
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             connectToServer();
@@ -282,8 +309,7 @@
                     return;
                 }
                 
-                socket.emit("start_interview", {
-                    session_id: sessionId,
+                sendMessage("start_interview", {
                     job_description: jobDescription,
                     resume: resume
                 });
@@ -297,8 +323,7 @@
                     return;
                 }
                 
-                socket.emit("submit_answer", {
-                    session_id: sessionId,
+                sendMessage("submit_answer", {
                     answer: answer
                 });
             });

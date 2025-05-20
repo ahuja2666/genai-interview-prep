@@ -29,24 +29,45 @@ An AI-powered interview simulator that conducts personalized interviews based on
 
 ## API Usage
 
-### WebSocket Events
+### WebSocket Connection
+
+Connect to the WebSocket endpoint with a unique client ID:
+```
+ws://localhost:8000/ws/{client_id}
+```
+
+### WebSocket Messages
+
+Messages use a standardized format:
+```json
+{
+  "event": "event_name",
+  "data": {
+    // Event-specific data
+  }
+}
+```
 
 #### Client -> Server Events:
 
 1. **start_interview**
    ```json
    {
-     "session_id": "unique_session_id",
-     "job_description": "Full job description text...",
-     "resume": "Full resume text..."
+     "event": "start_interview",
+     "data": {
+       "job_description": "Full job description text...",
+       "resume": "Full resume text..."
+     }
    }
    ```
 
 2. **submit_answer**
    ```json
    {
-     "session_id": "unique_session_id",
-     "answer": "User's answer to the question"
+     "event": "submit_answer",
+     "data": {
+       "answer": "User's answer to the question"
+     }
    }
    ```
 
@@ -55,26 +76,35 @@ An AI-powered interview simulator that conducts personalized interviews based on
 1. **interview_started**
    ```json
    {
-     "message": "Interview started successfully",
-     "question": "First interview question...",
-     "question_number": 1
+     "event": "interview_started",
+     "data": {
+       "message": "Interview started successfully",
+       "question": "First interview question...",
+       "question_number": 1
+     }
    }
    ```
 
 2. **next_question**
    ```json
    {
-     "question": "Next interview question...",
-     "question_number": 2
+     "event": "next_question",
+     "data": {
+       "question": "Next interview question...",
+       "question_number": 2
+     }
    }
    ```
 
 3. **interview_complete**
    ```json
    {
-     "message": "Interview completed",
-     "feedback": {
-       "detailed_feedback": "Comprehensive feedback text..."
+     "event": "interview_complete",
+     "data": {
+       "message": "Interview completed",
+       "feedback": {
+         "detailed_feedback": "Comprehensive feedback text..."
+       }
      }
    }
    ```
@@ -82,106 +112,20 @@ An AI-powered interview simulator that conducts personalized interviews based on
 4. **error**
    ```json
    {
-     "message": "Error message"
+     "event": "error",
+     "data": {
+       "message": "Error message"
+     }
    }
    ```
 
 ## Integration with Frontend
 
-To integrate with a frontend application:
-
-1. Connect to the WebSocket server:
-   ```javascript
-   const socket = io("http://localhost:5000");
-   
-   socket.on("connect", () => {
-     console.log("Connected to server");
-   });
-   ```
-
-2. Start an interview:
-   ```javascript
-   socket.emit("start_interview", {
-     session_id: "unique_session_id", // Generate a unique ID for the session
-     job_description: jobDescriptionText,
-     resume: resumeText
-   });
-   ```
-
-3. Listen for the first question:
-   ```javascript
-   socket.on("interview_started", (data) => {
-     console.log(`Question ${data.question_number}: ${data.question}`);
-     // Display the question to the user and capture their response
-   });
-   ```
-
-4. Submit the user's answer:
-   ```javascript
-   socket.emit("submit_answer", {
-     session_id: "unique_session_id",
-     answer: userAnswer
-   });
-   ```
-
-5. Listen for the next question:
-   ```javascript
-   socket.on("next_question", (data) => {
-     console.log(`Question ${data.question_number}: ${data.question}`);
-     // Display the new question to the user
-   });
-   ```
-
-6. Handle interview completion:
-   ```javascript
-   socket.on("interview_complete", (data) => {
-     console.log("Interview complete!");
-     console.log("Feedback:", data.feedback);
-     // Display the feedback to the user
-   });
-   ```
-
-7. Handle errors:
-   ```javascript
-   socket.on("error", (data) => {
-     console.error("Error:", data.message);
-     // Display error to the user
-   });
-   ```
+See the `example_client.html` file for a complete working example of how to integrate with a frontend application.
 
 ## Frontend TTS/STT Integration
 
-For a more immersive experience, you can integrate Text-to-Speech (TTS) and Speech-to-Text (STT) in your frontend:
-
-- Use the Web Speech API for browser-based TTS/STT
-- Or integrate with services like Google Cloud Speech-to-Text, Amazon Polly, etc.
-
-Example with Web Speech API:
-
-```javascript
-// Text to Speech
-function speakQuestion(question) {
-  const speech = new SpeechSynthesisUtterance(question);
-  window.speechSynthesis.speak(speech);
-}
-
-// Speech to Text
-function listenForAnswer() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  
-  recognition.onresult = (event) => {
-    const answer = event.results[0][0].transcript;
-    // Submit the answer to the server
-    socket.emit("submit_answer", {
-      session_id: "unique_session_id",
-      answer: answer
-    });
-  };
-  
-  recognition.start();
-}
-```
+For a more immersive experience, the example client includes Text-to-Speech (TTS) and Speech-to-Text (STT) using the Web Speech API.
 
 ## License
 
