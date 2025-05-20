@@ -1,73 +1,188 @@
-# Welcome to your Lovable project
 
-## Project info
+# AI Interview Simulator
 
-**URL**: https://lovable.dev/projects/20b06746-b773-4b36-bc2d-915a253b04b7
+An AI-powered interview simulator that conducts personalized interviews based on job descriptions and resumes.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Real-time interview simulation using WebSockets
+- Personalized questions based on job description and resume
+- Comprehensive feedback at the end of the interview
+- Easy integration with frontend applications
 
-**Use Lovable**
+## Setup
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/20b06746-b773-4b36-bc2d-915a253b04b7) and start prompting.
+1. Clone this repository
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+3. Create a `.env` file based on `.env.example` and add your OpenAI API key
+   ```
+   cp .env.example .env
+   # Edit the .env file to add your OpenAI API key
+   ```
+4. Run the application:
+   ```
+   python app.py
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+## API Usage
 
-**Use your preferred IDE**
+### WebSocket Events
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+#### Client -> Server Events:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. **start_interview**
+   ```json
+   {
+     "session_id": "unique_session_id",
+     "job_description": "Full job description text...",
+     "resume": "Full resume text..."
+   }
+   ```
 
-Follow these steps:
+2. **submit_answer**
+   ```json
+   {
+     "session_id": "unique_session_id",
+     "answer": "User's answer to the question"
+   }
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+#### Server -> Client Events:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **interview_started**
+   ```json
+   {
+     "message": "Interview started successfully",
+     "question": "First interview question...",
+     "question_number": 1
+   }
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. **next_question**
+   ```json
+   {
+     "question": "Next interview question...",
+     "question_number": 2
+   }
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+3. **interview_complete**
+   ```json
+   {
+     "message": "Interview completed",
+     "feedback": {
+       "detailed_feedback": "Comprehensive feedback text..."
+     }
+   }
+   ```
+
+4. **error**
+   ```json
+   {
+     "message": "Error message"
+   }
+   ```
+
+## Integration with Frontend
+
+To integrate with a frontend application:
+
+1. Connect to the WebSocket server:
+   ```javascript
+   const socket = io("http://localhost:5000");
+   
+   socket.on("connect", () => {
+     console.log("Connected to server");
+   });
+   ```
+
+2. Start an interview:
+   ```javascript
+   socket.emit("start_interview", {
+     session_id: "unique_session_id", // Generate a unique ID for the session
+     job_description: jobDescriptionText,
+     resume: resumeText
+   });
+   ```
+
+3. Listen for the first question:
+   ```javascript
+   socket.on("interview_started", (data) => {
+     console.log(`Question ${data.question_number}: ${data.question}`);
+     // Display the question to the user and capture their response
+   });
+   ```
+
+4. Submit the user's answer:
+   ```javascript
+   socket.emit("submit_answer", {
+     session_id: "unique_session_id",
+     answer: userAnswer
+   });
+   ```
+
+5. Listen for the next question:
+   ```javascript
+   socket.on("next_question", (data) => {
+     console.log(`Question ${data.question_number}: ${data.question}`);
+     // Display the new question to the user
+   });
+   ```
+
+6. Handle interview completion:
+   ```javascript
+   socket.on("interview_complete", (data) => {
+     console.log("Interview complete!");
+     console.log("Feedback:", data.feedback);
+     // Display the feedback to the user
+   });
+   ```
+
+7. Handle errors:
+   ```javascript
+   socket.on("error", (data) => {
+     console.error("Error:", data.message);
+     // Display error to the user
+   });
+   ```
+
+## Frontend TTS/STT Integration
+
+For a more immersive experience, you can integrate Text-to-Speech (TTS) and Speech-to-Text (STT) in your frontend:
+
+- Use the Web Speech API for browser-based TTS/STT
+- Or integrate with services like Google Cloud Speech-to-Text, Amazon Polly, etc.
+
+Example with Web Speech API:
+
+```javascript
+// Text to Speech
+function speakQuestion(question) {
+  const speech = new SpeechSynthesisUtterance(question);
+  window.speechSynthesis.speak(speech);
+}
+
+// Speech to Text
+function listenForAnswer() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  
+  recognition.onresult = (event) => {
+    const answer = event.results[0][0].transcript;
+    // Submit the answer to the server
+    socket.emit("submit_answer", {
+      session_id: "unique_session_id",
+      answer: answer
+    });
+  };
+  
+  recognition.start();
+}
 ```
 
-**Edit a file directly in GitHub**
+## License
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/20b06746-b773-4b36-bc2d-915a253b04b7) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+MIT
