@@ -20,7 +20,7 @@ export const InterviewSession = ({
   const [answer, setAnswer] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Text-to-speech function
   const speakText = (text: string) => {
