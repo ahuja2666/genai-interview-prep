@@ -37,8 +37,8 @@ class InterviewAgent:
         # Initialize the LLM
         self.llm = ChatOpenAI(
             temperature=0.5,
-            model="gpt-4",
-            api_key=os.getenv("OPENAI_API_KEY")
+            model_name="gpt-4",
+            openai_api_key=os.getenv("OPENAI_API_KEY")
         )
         
         # Initialize OpenAI client for audio
