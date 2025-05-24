@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from "react";
 
 // Generate a unique client ID
@@ -27,55 +26,42 @@ export const useInterviewWebSocket = ({
   const [feedback, setFeedback] = useState("");
   const socketRef = useRef<WebSocket | null>(null);
   const clientIdRef = useRef<string>(generateClientId());
-  const reconnectAttemptsRef = useRef<number>(0);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const maxReconnectAttempts = 5;
 
   const connect = useCallback(() => {
-    // Close existing socket if it exists
+    // Don't try to connect if we already have a socket
     if (socketRef.current) {
-      socketRef.current.close();
-    }
-
-    // Reset reconnect timeout if exists
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+      return;
     }
 
     try {
-      // Instead of hardcoding localhost, detect the current environment
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = process.env.NODE_ENV === 'production' ? window.location.host : 'localhost:8000';
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host =
+        process.env.NODE_ENV === "production"
+          ? window.location.host
+          : "localhost:8000";
       const wsUrl = `${protocol}//${host}/ws/${clientIdRef.current}`;
-      
+
       console.log(`Connecting to WebSocket at: ${wsUrl}`);
-      
-      // Create new WebSocket connection
+
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
         console.log("Connected to server");
         setIsConnected(true);
-        reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
         onConnect?.();
       };
 
       socket.onclose = (event) => {
         console.log("Disconnected from server", event.code, event.reason);
         setIsConnected(false);
-        
-        // Only try to reconnect if it wasn't a normal closure
-        if (event.code !== 1000) {
-          handleReconnect();
-        } else {
-          onDisconnect?.();
-        }
+        onDisconnect?.();
       };
 
       socket.onerror = (error) => {
         console.error("WebSocket error:", error);
-        // Don't call onError here, as onclose will be called next and will handle reconnection
+        onError?.(
+          "Failed to connect to server. Please ensure the server is running."
+        );
       };
 
       socket.onmessage = (event) => {
@@ -116,111 +102,77 @@ export const useInterviewWebSocket = ({
       socketRef.current = socket;
     } catch (error) {
       console.error("Error creating WebSocket:", error);
-      handleReconnect();
+      onError?.("Failed to create WebSocket connection");
     }
-  }, [onConnect, onDisconnect, onError, onInterviewStarted, onInterviewComplete]);
-
-  const handleReconnect = useCallback(() => {
-    if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-      reconnectAttemptsRef.current += 1;
-      
-      // Exponential backoff: wait longer with each reconnection attempt
-      const delay = Math.min(1000 * (2 ** reconnectAttemptsRef.current), 30000);
-      
-      console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
-      
-      // Clean up any existing timeout
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      
-      // Set a new timeout for reconnection
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
-      }, delay);
-      
-      onDisconnect?.();
-    } else {
-      console.error(`Failed to reconnect after ${maxReconnectAttempts} attempts`);
-      onError?.(`Unable to connect to server after ${maxReconnectAttempts} attempts. Please refresh the page.`);
-    }
-  }, [connect, onDisconnect, onError]);
+  }, [
+    onConnect,
+    onDisconnect,
+    onError,
+    onInterviewStarted,
+    onInterviewComplete,
+  ]);
 
   const disconnect = useCallback(() => {
-    // Clear any reconnection timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    // Close the WebSocket connection if it exists
     if (socketRef.current) {
-      socketRef.current.close(1000, "Normal closure"); // Use 1000 for normal closure
+      socketRef.current.close(1000, "Normal closure");
       socketRef.current = null;
     }
-    
     setIsConnected(false);
   }, []);
 
-  const sendMessage = useCallback((eventType: string, data: any) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(
-        JSON.stringify({
-          event: eventType,
-          data: data,
-        })
-      );
-    } else {
-      console.error("WebSocket is not connected");
-      
-      // Try to reconnect if socket is closed unexpectedly
-      if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
-        connect();
+  const sendMessage = useCallback(
+    (eventType: string, data: unknown) => {
+      if (
+        socketRef.current &&
+        socketRef.current.readyState === WebSocket.OPEN
+      ) {
+        socketRef.current.send(
+          JSON.stringify({
+            event: eventType,
+            data: data,
+          })
+        );
+      } else {
+        console.error("WebSocket is not connected");
+        onError?.("Not connected to server");
       }
-      
-      onError?.("Connection to server lost. Attempting to reconnect...");
-    }
-  }, [onError, connect]);
+    },
+    [onError]
+  );
 
   const startInterview = useCallback(
     (jobDescription: string, resume: string) => {
-      // Only attempt to start interview if connected
       if (isConnected) {
         sendMessage("start_interview", {
           job_description: jobDescription,
           resume: resume,
         });
       } else {
-        onError?.("Not connected to server. Please wait for connection to be established.");
-        connect(); // Try to connect if not already connected
+        onError?.("Not connected to server");
       }
     },
-    [sendMessage, isConnected, onError, connect]
+    [sendMessage, isConnected, onError]
   );
 
   const submitAnswer = useCallback(
     (answer: string) => {
-      // Only attempt to submit answer if connected
       if (isConnected) {
         sendMessage("submit_answer", {
           answer: answer,
         });
       } else {
-        onError?.("Not connected to server. Please wait for connection to be established.");
-        connect(); // Try to connect if not already connected
+        onError?.("Not connected to server");
       }
     },
-    [sendMessage, isConnected, onError, connect]
+    [sendMessage, isConnected, onError]
   );
 
-  // Clean up WebSocket connection and timeouts on unmount
+  // Only clean up on unmount
   useEffect(() => {
-    connect();
-    
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [disconnect]);
 
   return {
     connect,
